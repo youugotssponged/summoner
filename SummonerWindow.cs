@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace summoner
 {
-    public partial class Form1 : Form
+    public partial class SummonerWindow : Form
     {
         [LibraryImport("user32.dll")]
         private static partial IntPtr GetForegroundWindow();
@@ -17,25 +17,34 @@ namespace summoner
 
         [LibraryImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static partial bool IsIconic(IntPtr hWnd);
+        private static partial bool IsZoomed(IntPtr hWnd);
 
         [LibraryImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
-        private static partial bool IsZoomed(IntPtr hWnd);
+        private static partial bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        [DllImport("dwmapi.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
 
         private const short SWP_NOSIZE = 1;
         private const int SWP_SHOWWINDOW = 0x0040;
         private const int SW_RESTORE = 9;
         private const int SW_SHOWMAXIMIZED = 3;
+        private const int DWMWA_CLOAKED = 14;
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
 
-        public Form1()
+        public SummonerWindow()
         {
             InitializeComponent();
             InitApp();
         }
 
         private void InitApp() => RefreshLists(this, EventArgs.Empty);
-        
+
         private void MoveWindowToTopLeftOfScreen(IntPtr h)
         {
             Rectangle rect;
@@ -51,14 +60,13 @@ namespace summoner
             rect = Screen.AllScreens[screenIndex].Bounds;
             if (h != IntPtr.Zero)
             {
-                if (IsIconic(h))
-                {
-                    ShowWindow(h, SW_RESTORE);
-                }
+                bool isMaximised = IsZoomed(h); // Is it maximised before moving displays?
+
+                ShowWindow(h, SW_RESTORE);
 
                 SetWindowPos(h, 0, rect.X, rect.Y, 0, 0, SWP_NOSIZE | SWP_SHOWWINDOW);
 
-                if (IsZoomed(h))
+                if (!IsZoomed(h) && isMaximised) // If was maximised before reposition, and is no longer maximized due to restore, then re-maximize 
                 {
                     ShowWindow(h, SW_SHOWMAXIMIZED);
                 }
@@ -72,10 +80,13 @@ namespace summoner
             WindowsLB.Items.Clear();
             foreach (Process p in processCollection)
             {
-                s = p.MainWindowTitle;
-                if (s != string.Empty)
+                if (IsOnTaskbar(p.MainWindowHandle) && !IsCloaked(p.MainWindowHandle))
                 {
-                    WindowsLB.Items.Add(s);
+                    s = p.MainWindowTitle;
+                    if (s != string.Empty)
+                    {
+                        WindowsLB.Items.Add(s);
+                    }
                 }
             }
         }
@@ -86,7 +97,8 @@ namespace summoner
             for (int i = 0; i < Screen.AllScreens.Length; i++)
             {
                 Screen currentScreen = Screen.AllScreens[i];
-                ScreensLB.Items.Add($"{currentScreen.DeviceName} - ({currentScreen.Bounds.Width}x{currentScreen.Bounds.Height})");
+                string shortName = currentScreen.DeviceName.Replace(@"\\.\", "");
+                ScreensLB.Items.Add($"{shortName} - ({currentScreen.Bounds.Width}x{currentScreen.Bounds.Height})");
             }
         }
 
@@ -94,6 +106,29 @@ namespace summoner
         {
             GetWindowTitles();
             GetScreens();
+        }
+
+        private static bool IsCloaked(IntPtr hWnd)
+        {
+            int cloaked = 0;
+            DwmGetWindowAttribute(hWnd, DWMWA_CLOAKED, out cloaked, sizeof(int));
+            return cloaked != 0;
+        }
+
+        private static bool IsOnTaskbar(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero)
+                return false;
+
+            if (!IsWindowVisible(hWnd))
+                return false;
+
+            // Exclude tool windows (like floating tool palettes)
+            IntPtr exStyle = GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+            if (((int)exStyle & WS_EX_TOOLWINDOW) != 0)
+                return false;
+
+            return true;
         }
 
         private void ShowWindowBtn_Click(object sender, EventArgs e)
@@ -110,9 +145,9 @@ namespace summoner
                 appname = WindowsLB.SelectedItem.ToString();
                 hWnd = IntPtr.Zero;
 
-                foreach(Process pList in Process.GetProcesses())
+                foreach (Process pList in Process.GetProcesses())
                 {
-                    if(!string.IsNullOrEmpty(appname) && pList.MainWindowTitle == appname)
+                    if (!string.IsNullOrEmpty(appname) && pList.MainWindowTitle == appname)
                     {
                         hWnd = pList.MainWindowHandle;
                     }

@@ -1,6 +1,6 @@
 ﻿namespace summoner
 {
-    partial class Form1
+    partial class SummonerWindow
     {
         /// <summary>
         ///  Required designer variable.
@@ -116,7 +116,7 @@
             Controls.Add(label1);
             Controls.Add(button1);
             MaximizeBox = false;
-            Name = "Form1";
+            Name = "SummonerWindow";
             Text = "Summoner";
             ResumeLayout(false);
             PerformLayout();

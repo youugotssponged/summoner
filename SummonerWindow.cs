@@ -159,5 +159,10 @@ namespace summoner
                 }
             }
         }
+
+        private void Info_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Summoner (v1.0.0) made by @youugotssponged");
+        }
     }
 }

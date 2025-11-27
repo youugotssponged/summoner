@@ -33,8 +33,8 @@
             label2 = new Label();
             WindowsLB = new ListBox();
             ScreensLB = new ListBox();
-            button2 = new Button();
             button3 = new Button();
+            Info = new Button();
             SuspendLayout();
             // 
             // button1
@@ -84,18 +84,9 @@
             ScreensLB.Size = new Size(250, 244);
             ScreensLB.TabIndex = 6;
             // 
-            // button2
-            // 
-            button2.Location = new Point(137, 1);
-            button2.Name = "button2";
-            button2.Size = new Size(91, 23);
-            button2.TabIndex = 7;
-            button2.Text = "button2";
-            button2.UseVisualStyleBackColor = true;
-            // 
             // button3
             // 
-            button3.Location = new Point(137, 1);
+            button3.Location = new Point(76, 1);
             button3.Name = "button3";
             button3.Size = new Size(91, 23);
             button3.TabIndex = 7;
@@ -103,13 +94,23 @@
             button3.UseVisualStyleBackColor = true;
             button3.Click += RefreshLists;
             // 
-            // Form1
+            // Info
+            // 
+            Info.Location = new Point(366, 1);
+            Info.Name = "Info";
+            Info.Size = new Size(91, 23);
+            Info.TabIndex = 8;
+            Info.Text = "Info";
+            Info.UseVisualStyleBackColor = true;
+            Info.Click += Info_Click;
+            // 
+            // SummonerWindow
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(530, 320);
+            Controls.Add(Info);
             Controls.Add(button3);
-            Controls.Add(button2);
             Controls.Add(ScreensLB);
             Controls.Add(WindowsLB);
             Controls.Add(label2);
@@ -129,7 +130,7 @@
         private Label label2;
         private ListBox WindowsLB;
         private ListBox ScreensLB;
-        private Button button2;
         private Button button3;
+        private Button Info;
     }
 }
